@@ -11,34 +11,39 @@ import {
   Heading,
 } from "@chakra-ui/react";
 import Logo from "../../assets/logo/logo_with_text.svg?react";
+import { createClient } from "@supabase/supabase-js";
 
 function LoginPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const API_URL = import.meta.env.VITE_APP_API_URL;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!username || !password) {
-      setError("Username or password cannot be empty!");
+    if (!email || !password) {
+      setError("Email or password cannot be empty!");
       return;
     }
 
-    try {
-      const response = await axios.post(`${API_URL}login`, {
-        username,
-        password,
-      });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("isAuthenticated", true);
-      navigate("/home/trace");
-    } catch (err) {
-      setError(err.response?.data?.message || "An error occurred");
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    if (data?.session) {
+      localStorage.setItem("token", data.session.access_token);
+      navigate("/home");
     }
   };
 
@@ -75,13 +80,13 @@ function LoginPage() {
             <VStack spacing={4}>
               <Field.Root>
                 <Field.Label>
-                  Username
+                  Email
                   <Field.RequiredIndicator />
                 </Field.Label>
                 <Input
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
                   borderColor="#79a5b2"
                   css={{ "--focus-color": "#275765" }}
                 />
