@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link as RouterLink } from "react-router-dom";
-import axios from "axios";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -9,33 +8,53 @@ import {
   VStack,
   Text,
   Heading,
-  Link,
-  HStack,
 } from "@chakra-ui/react";
 import Logo from "../../assets/logo/logo_with_text.svg?react";
 import { createClient } from "@supabase/supabase-js";
 
-function LoginPage() {
+function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmError, setConfirmError] = useState("");
   const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+  useEffect(() => {
+    if (confirmPassword && password !== confirmPassword) {
+      setConfirmError("Passwords do not match!");
+    } else {
+      setConfirmError("");
+    }
+  }, [password, confirmPassword]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email || !password) {
-      setError("Email or password cannot be empty!");
+    if (!email || !password || !confirmPassword) {
+      setError("All field are required!");
       return;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    if (password !== confirmPassword) {
+      setError("Passwords do not match!");
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          first_name: "John",
+          age: 27,
+        },
+      },
     });
 
     if (error) {
@@ -43,9 +62,8 @@ function LoginPage() {
       return;
     }
 
-    if (data?.session) {
-      localStorage.setItem("token", data.session.access_token);
-      navigate("/home");
+    if (data?.user) {
+      navigate("/login");
     }
   };
 
@@ -71,16 +89,11 @@ function LoginPage() {
       >
         <VStack spacing={5} align="stretch">
           <Heading textAlign="center" color="#275765">
-            Login
+            Sign up
           </Heading>
-          {error && (
-            <Text color="red.500" fontSize="sm" textAlign="center">
-              {error}
-            </Text>
-          )}
           <form onSubmit={handleSubmit}>
             <VStack spacing={4}>
-              <Field.Root>
+              <Field.Root required>
                 <Field.Label>
                   Email
                   <Field.RequiredIndicator />
@@ -92,9 +105,8 @@ function LoginPage() {
                   borderColor="#79a5b2"
                   css={{ "--focus-color": "#275765" }}
                 />
-                <Field.ErrorText>{error}</Field.ErrorText>
               </Field.Root>
-              <Field.Root>
+              <Field.Root invalid={!!confirmError} required>
                 <Field.Label>
                   Password
                   <Field.RequiredIndicator />
@@ -104,10 +116,24 @@ function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  borderColor="#79a5b2"
+                  borderColor={confirmError ? "red.400" : "#79a5b2"}
                   css={{ "--focus-color": "#275765" }}
                 />
-                <Field.ErrorText>{error}</Field.ErrorText>
+              </Field.Root>
+              <Field.Root invalid={!!confirmError} required>
+                <Field.Label>
+                  Confirm password
+                  <Field.RequiredIndicator />
+                </Field.Label>
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm your password"
+                  borderColor={confirmError ? "red.400" : "#79a5b2"}
+                  css={{ "--focus-color": "#275765" }}
+                />
+                <Field.ErrorText>{confirmError}</Field.ErrorText>
               </Field.Root>
               <Button
                 type="submit"
@@ -116,28 +142,8 @@ function LoginPage() {
                 _hover={{ bg: "#d87f8c", borderColor: "transparent" }}
                 width="100%"
               >
-                Login
+                Sign up
               </Button>
-              <HStack justify="space-between" w="100%">
-                <Link
-                  as={RouterLink}
-                  to="/forgot-password"
-                  color="#275765"
-                  fontSize="sm"
-                  _hover={{ color: "#d87f8c", textDecoration: "none" }}
-                >
-                  Forgot password?
-                </Link>
-                <Link
-                  as={RouterLink}
-                  to="/signup"
-                  color="#275765"
-                  fontSize="sm"
-                  _hover={{ color: "#d87f8c", textDecoration: "none" }}
-                >
-                  Sign up
-                </Link>
-              </HStack>
             </VStack>
           </form>
         </VStack>
@@ -146,4 +152,4 @@ function LoginPage() {
   );
 }
 
-export default LoginPage;
+export default SignupPage;
