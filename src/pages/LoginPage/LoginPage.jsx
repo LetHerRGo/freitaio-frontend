@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate, Link as RouterLink } from "react-router-dom";
 import axios from "axios";
 import {
   Box,
@@ -11,27 +11,36 @@ import {
   Heading,
   Link,
   HStack,
+  Alert,
+  CloseButton,
 } from "@chakra-ui/react";
 import Logo from "../../assets/logo/logo_with_text.svg?react";
 import { createClient } from "@supabase/supabase-js";
+import CustomAlert from "../../components/CustomAlert/CustomAlert.jsx";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [signupSuccess, setSignupSuccess] = useState("");
+
   const navigate = useNavigate();
+  const location = useLocation();
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+  useEffect(() => {
+    if (location.state?.success) {
+      setSignupSuccess(location.state.success);
+      // clear from history so it won’t reappear on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!email || !password) {
-      setError("Email or password cannot be empty!");
-      return;
-    }
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -74,19 +83,26 @@ function LoginPage() {
             Login
           </Heading>
           {error && (
-            <Text color="red.500" fontSize="sm" textAlign="center">
-              {error}
-            </Text>
+            <CustomAlert
+              status="error"
+              alertMessage={error}
+              onClose={() => setError("")}
+            />
+          )}
+          {signupSuccess && (
+            <CustomAlert
+              status="success"
+              alertMessage={signupSuccess}
+              onClose={() => setSignupSuccess("")}
+            />
           )}
           <form onSubmit={handleSubmit}>
             <VStack spacing={4}>
-              <Field.Root>
-                <Field.Label>
-                  Email
-                  <Field.RequiredIndicator />
-                </Field.Label>
+              <Field.Root required>
+                <Field.Label>Email</Field.Label>
                 <Input
                   value={email}
+                  autoFocus
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   borderColor="#79a5b2"
@@ -94,11 +110,8 @@ function LoginPage() {
                 />
                 <Field.ErrorText>{error}</Field.ErrorText>
               </Field.Root>
-              <Field.Root>
-                <Field.Label>
-                  Password
-                  <Field.RequiredIndicator />
-                </Field.Label>
+              <Field.Root required>
+                <Field.Label>Password</Field.Label>
                 <Input
                   type="password"
                   value={password}

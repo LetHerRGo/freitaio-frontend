@@ -117,7 +117,6 @@ function SignupPage() {
                   placeholder="Enter your email"
                   borderColor="#79a5b2"
                   css={{ "--focus-color": "#275765" }}
-                  autoFocus
                 />
               </Field.Root>
               <Field.Root invalid={!!confirmError} required>

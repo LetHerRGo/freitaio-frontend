@@ -7,6 +7,11 @@ import { CiLogout, CiSearch } from "react-icons/ci";
 import { MdOutlineDirectionsRailway } from "react-icons/md";
 import { CgPlayListAdd } from "react-icons/cg";
 import { jwtDecode } from "jwt-decode";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function Sidebar({ navSize, onToggleNav }) {
   const navigate = useNavigate();
@@ -20,9 +25,8 @@ export default function Sidebar({ navSize, onToggleNav }) {
     username = decoded.username;
   }
 
-  const handleLogout = (e) => {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("token");
+  const handleLogout = async (e) => {
+    const { error } = await supabase.auth.signOut();
     navigate("/login");
   };
 
